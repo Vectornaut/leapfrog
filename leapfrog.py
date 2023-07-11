@@ -76,51 +76,25 @@ class Leapfrog(qt.QMainWindow):
     self.setWindowTitle('Leapfrog')
     self.resize(900, 900)
 
-    # create initial polygon
-    ##self.polygon = swath_polygon_from_sides([
-    ##  array([0, -1.05, sqrt(1.05**2 - 1)]),
-    ##  array([0.75, 0.75, sqrt(2*0.75**2 - 1)]),
-    ##  array([-1.05, 0, sqrt(1.05**2 - 1)])
-    ##])
-
-    ## formulas for regular polygon sides adapted from Anton Sherwood's tiling
-    ## programs, via the versions from chorno-belyi
-    ##
-    ##   https://github.com/Vectornaut/chorno-belyi/blob/81e9f51179902da2f75ad24fdd51da3213b8a913/covering.py#L48
-    ##
-    ## [0, 1, 0],
-    ## [-sp, -cp, 0],
-    ## [
-    ##    (cp*cq + cr) / sp,
-    ##    -cq,
-    ##    np.sqrt(-1 + (cp*cp + cq*cq + cr*cr + 2*cp*cq*cr)) / sp
-    ## ]
-
-    # get vertex cosines
-    ## this came from code for drawing p pairs of triangles, so it gives a 2p-gon
-    p = 4
+    # construct a p-gon that tiles with q copies around each vertex
+    #
+    # the formula for the side normals is adapted from Anton Sherwood's programs
+    # for painting hyperbolic tilings,
+    #
+    #   https://commons.wikimedia.org/wiki/User:Tamfang/programs
+    #
+    # via the version from chorno-belyi
+    #
+    #   https://github.com/Vectornaut/chorno-belyi/blob/81e9f51179902da2f75ad24fdd51da3213b8a913/covering.py#L48
+    #
+    p = 8
     q = 3
-    sp = sin(pi/p)
-    cp = cos(pi/p)
-    cq = cos(pi/q)
+    a = cos(pi/q) / sin(pi/p)
+    b = sqrt(a*a - 1)
+    sides = [array([a*cos(2*pi*k/p), a*sin(2*pi*k/p), b]) for k in range(p)]
+    self.polygon = swath_polygon_from_sides(sides)
 
-    ## rad = cq*sqrt(1 + (1+cp)*(1+cp)/(sp*sp))
-    ## rad = cq*sqrt(1 + (1+cp)/(1-cp))
-    ## rad = cq*sqrt(2/(1-cp))
-    rad = cq / sin(pi/(2*p))
-    ## h = sqrt(-1 + cp*cp + 2*(cp + 1)*cq*cq) / sp
-    ## h = sqrt(-sp*sp + 2*(cp + 1)*cq*cq) / sp
-    ## h = sqrt(-1 + 2*(cp + 1)*cq*cq/(sp*sp))
-    ## h = sqrt(-1 + cq*cq*2/(1 - cp))
-    ## h = sqrt(-1 + cq*cq / sin(pi/(2*p))**2)
-    ## h = sqrt(-1 + cq*cq / sin(pi/(2*p))**2)
-    h = sqrt(rad*rad - 1)
-    self.polygon = swath_polygon_from_sides([
-      array([rad*cos(pi*k/p), rad*sin(pi*k/p), h])
-      for k in range(2*p)
-    ])
-
-    # add domain canvas
+    # add the canvas
     self.canvas = LeapfrogCanvas(self.polygon, size=(1200, 1200))
     self.canvas.native.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
     self.setCentralWidget(self.canvas.native)
