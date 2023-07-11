@@ -21,7 +21,7 @@ Python 3, Sage, GLSL.
   - If the interpreter complains that there's "`no module named 'sage.all'`", try using Sage's internal Python distribution by calling `sage -python explorer.py`.
     - If this also gives you trouble, call `sage -python --version` to make sure your Sage has Python 3 or above.
 2. Press the keys 1&ndash;9 to unfold along sides 1&ndash;9 of the polygon.
-  - The sides of the polygon are labeled by colors: (1) red, (2) orange, (3) yellow, (4) green, (5) blue, (6, 7, 8, ...) pink.
+  - The sides of the polygon are labeled by colors: (1) red, (2) orange, (3) yellow, (4) green, (5) blue, (6) purple, (7, 8, 9, ...) pink.
   - If you need non-color labels, let me know.
   - A message in the terminal will tell you whether the unfolding succeeded.
 3. The bright part of the plane shows the swath of trajectories consistent with how you've unfolded so far.

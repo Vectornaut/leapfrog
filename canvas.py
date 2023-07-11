@@ -76,6 +76,7 @@ void main() {
       else if (nearest_mirror == 2) color = vec3(1., 0.9, 0.);
       else if (nearest_mirror == 3) color = vec3(0., 1., 0.);
       else if (nearest_mirror == 4) color = vec3(0., 0., 1.);
+      else if (nearest_mirror == 5) color = vec3(0.5, 0., 1.);
       else color = vec3(1., 0., 1.);
     } else {
       color = vec3(1.);
