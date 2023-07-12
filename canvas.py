@@ -18,14 +18,18 @@ uniform float shortdim;
 uniform int n_sides;
 uniform vec3 sides [128];
 uniform bool full_swath;
-uniform float swath_r;
-uniform float swath_l;
+uniform vec2 swath_r;
+uniform vec2 swath_l;
 
 // --- minkowski geometry ---
 
 // the minkowski bilinear form
 float mprod(vec3 v, vec3 w) {
   return dot(v.xy, w.xy) - v.z*w.z;
+}
+
+bool right_of(vec2 v, vec2 w) {
+  return v.x*w.y > w.x*v.y;
 }
 
 // --- swath polygon ---
@@ -60,7 +64,7 @@ void main() {
       if (mirror_prod > 0.) {
         // we're on the outer side of a mirror, so we're outside the polygon
         vec3 color = vec3(0.4);
-        if (!full_swath && r_sq > EPS && (ang > swath_l || swath_r > ang)) {
+        if (!full_swath && (right_of(swath_l, v.xy) || right_of(v.xy, swath_r))) {
           color *= 0.5;
         }
         gl_FragColor = vec4(color, 1.);
@@ -81,7 +85,7 @@ void main() {
     } else {
       color = vec3(1.);
     }
-    if (!full_swath && r_sq > EPS && (ang > swath_l || swath_r > ang)) {
+    if (!full_swath && (right_of(swath_l, v.xy) || right_of(v.xy, swath_r))) {
       color *= 0.5;
     }
     gl_FragColor = vec4(color, 1.);
@@ -124,9 +128,12 @@ class LeapfrogCanvas(app.Canvas):
       self.program['sides[{}]'.format(k)] = [0, 0, 0]
     self.program['full_swath'] = polygon.full_swath
     if polygon.full_swath:
-      self.program['swath_r'] = 0;
-      self.program['swath_l'] = 0;
+      self.program['swath_r'] = [0, 0];
+      self.program['swath_l'] = [0, 0];
     else:
+      print('swath_r: ', polygon.swath_r)
+      print('swath_l: ', polygon.swath_l)
+      print('------')
       self.program['swath_r'] = polygon.swath_r
       self.program['swath_l'] = polygon.swath_l
 
