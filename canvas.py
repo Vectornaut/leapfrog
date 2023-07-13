@@ -1,5 +1,6 @@
 from vispy import app, gloo
 import vispy.util.keys as keys
+from sage.all import AA ## just for printing swath edges
 
 vertex = '''
 attribute vec2 position;
@@ -131,8 +132,8 @@ class LeapfrogCanvas(app.Canvas):
       self.program['swath_r'] = [0, 0];
       self.program['swath_l'] = [0, 0];
     else:
-      print('swath_r: ', polygon.swath_r)
-      print('swath_l: ', polygon.swath_l)
+      print('swath_r: ', list(map(AA, polygon.swath_r)))
+      print('swath_l: ', list(map(AA, polygon.swath_l)))
       print('------')
       self.program['swath_r'] = polygon.swath_r
       self.program['swath_l'] = polygon.swath_l

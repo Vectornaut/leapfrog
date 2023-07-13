@@ -3,27 +3,27 @@ import PyQt5.QtWidgets as qt
 from PyQt5.QtCore import Qt
 from vispy import app
 import vispy.io as io
-from numpy import pi, sqrt, cos, sin, arctan2, array, dot, cross
-from sage.all import chebyshev_T, chebyshev_U
+from sage.all import (
+  sqrt, pi, cos, sin, chebyshev_T, chebyshev_U,
+  ZZ, number_field_elements_from_algebraics, AA,
+  FreeModule, matrix
+)
 
 from canvas import LeapfrogCanvas
 
 app.use_app(backend_name='PyQt5', call_reuse=True)
 
-# the minkowski bilinear form
-def mprod(v, w):
-  return dot(v[:-1], w[:-1]) - v[-1]*w[-1]
-
 # reflect v over the plane orthogonal to m
 def reflect(m, v):
-  return v - 2*mprod(v, m)*m
+  return v - 2*v.inner_product(m)*m
 
 # the lorentzian cross product
-def mcross(v, w):
-  result = cross(v, w)
-  result[0] = -result[0]
-  result[1] = -result[1]
-  return result
+def lorentz_cross(v, w):
+  return v.parent()([
+    -v[1]*w[2] + v[2]*w[1],
+    -v[2]*w[0] + v[0]*w[2],
+     v[0]*w[1] - v[1]*w[0]
+  ])
 
 def right_of(v, w):
   return v[0]*w[1] > w[0]*v[1]
@@ -93,7 +93,7 @@ class SwathPolygon:
 def swath_polygon_from_sides(sides, swath_r = None, swath_l = None):
   vtx = []
   for k in range(len(sides)):
-    vtx.append(mcross(sides[k], sides[(k+1) % len(sides)]))
+    vtx.append(lorentz_cross(sides[k], sides[(k+1) % len(sides)]))
   return SwathPolygon(sides, vtx, 1, swath_r, swath_l)
 
 class Leapfrog(qt.QMainWindow):
@@ -102,7 +102,7 @@ class Leapfrog(qt.QMainWindow):
     self.setWindowTitle('Leapfrog')
     self.resize(900, 900)
 
-    # construct a p-gon that tiles with q copies around each vertex
+    # --- construct a p-gon that tiles with q copies around each vertex ---
     #
     # the formula for the side normals is adapted from Anton Sherwood's programs
     # for painting hyperbolic tilings,
@@ -113,16 +113,32 @@ class Leapfrog(qt.QMainWindow):
     #
     #   https://github.com/Vectornaut/chorno-belyi/blob/81e9f51179902da2f75ad24fdd51da3213b8a913/covering.py#L48
     #
-    p = 6 # and q = 4
-    cp = sqrt(3)/2 # cos(pi/p)
-    sp = 1/2       # sin(pi/p)
-    cq = sqrt(2)/2 # cos(pi/q)
-    sq = sqrt(2)/2 # sin(pi/q)
+
+    # build an algebraic number field K that contains the entries of the
+    # polygon's side normals
+    p = 6
+    q = 4
+    cp_symb = cos(pi/p)
+    sp_symb = sin(pi/p)
+    cq_symb = cos(pi/q)
+    sq_symb = sin(pi/q)
+    a_symb = cq_symb / sp_symb
+    b_symb = sqrt(a_symb**2 - 1)
+    K, (cp, sp, cq, sq, b), _ = number_field_elements_from_algebraics(
+      [cp_symb, sp_symb, cq_symb, sq_symb, b_symb],
+      minimal=True, embedded=True
+    )
     a = cq / sp
-    b = sqrt(a*a - 1)
-    sides = [array([
-      a*chebyshev_T(2*k, cp),      # a*cos(2*pi*k/p)
-      a*chebyshev_U(2*k-1, cp)*sp, # a*sin(2*pi*k/p)
+    print(K)
+
+    # construct the Minkowski spacetime K^(2,1)
+    lorentz_form = matrix(ZZ, [[1, 0, 0], [0, 1, 0], [0, 0, -1]])
+    M = FreeModule(K, 3, inner_product_matrix = lorentz_form)
+
+    # build the polygon from its side normals
+    sides = [M([
+      a*chebyshev_T(2*k, cp),      # a*cos(2*k*pi/p)
+      a*chebyshev_U(2*k-1, cp)*sp, # a*sin(2*k*pi/p)
       b
     ]) for k in range(p)]
     self.polygon = swath_polygon_from_sides(sides)
